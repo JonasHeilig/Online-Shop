@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Thank You</title>
+    <link rel="stylesheet" href="/static/bootstrap-5.3.3-dist/css/bootstrap.min.css">
+    <script src="/static/bootstrap-5.3.3-dist/js/bootstrap.min.js"></script>
+    <style>
+        .transaction-id {
+            color: rgba(110, 110, 110, 0.98);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card mt-5">
+                    <div class="card-body">
+                        <h2 class="card-title text-center">Thank You For Your Purchase!</h2>
+                        <p class="card-text text-center">Your transaction was successful. We appreciate your business.</p>
+                        {% if additional_info %}
+                        <div class="additional-info text-center mt-3">
+                            <h5>More Information:</h5>
+                            <p>{{ additional_info }}</p>
+                        </div>
+                        {% endif %}
+                        <footer class="text-center mt-5">
+                            <p class="transaction-id">Transaction ID: {{ transaction_id }}</p>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
