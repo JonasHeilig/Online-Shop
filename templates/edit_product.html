@@ -20,6 +20,10 @@
                 <label for="description" class="form-label">Description:</label>
                 <textarea name="description" class="form-control" required>{{ product.description }}</textarea>
             </div>
+            <div class="mb-3 form-check">  <!-- new checkbox -->
+                <input type="checkbox" class="form-check-input" id="is_purchasable" name="is_purchasable" {% if product.is_purchasable %}checked{% endif %}>
+                <label class="form-check-label" for="is_purchasable">Is Purchasable</label>
+            </div>
             <button type="submit" class="btn btn-primary">Save Changes</button>
         </form>
         <h2 class="mt-4">Add Price</h2>
@@ -48,7 +52,8 @@
                 </li>
             {% endfor %}
         </ul>
-        <a href="{{ url_for('view_product', id=product.id) }}" class="btn btn-secondary mt-3">Back to Product</a>
+        <a href="{{ url_for('view_product', id=product.id) }}" class="btn btn-secondary mt-3">Back to Product</a> <br>
+        <a href="{{ url_for('list_products') }}" class="btn btn-primary mt-3">Product List</a>
     </div>
 </body>
 </html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product List</title>
+    <link rel="stylesheet" href="/static/bootstrap-5.3.3-dist/css/bootstrap.min.css">
+    <script src="/static/bootstrap-5.3.3-dist/js/bootstrap.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Product List</h1>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Is Purchasable</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                    <form method="POST">
+                        <tr>
+                            <td>{{ product.id }}<input type="hidden" name="product_id" value="{{ product.id }}"></td>
+                            <td><input type="text" name="name" value="{{ product.name }}" class="form-control"></td>
+                            <td><input type="text" name="description" value="{{ product.description }}" class="form-control"></td>
+                            <td><input type="checkbox" name="is_purchasable" {% if product.is_purchasable %}checked{% endif %}></td>
+                            <td>
+                                <button type="submit" class="btn btn-primary">Update</button>
+                                <a href="{{ url_for('edit_product', id=product.id) }}" class="btn btn-secondary">Edit</a>
+                            </td>
+                        </tr>
+                    </form>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

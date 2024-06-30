@@ -17,9 +17,11 @@
                         <div class="card-body">
                             <h2 class="card-title">{{ product.name }}</h2>
                             <p class="card-text">{{ product.description }}</p>
-                            {% if product.active_price %}
-                                <p class="card-text"><strong>Price:</strong> {{ product.active_price.price / 100 }} EUR</p>
-                            {% endif %}
+                            {% for price in product.prices %}
+                                {% if price.active %}
+                                    <p class="card-text"><strong>Price:</strong> {{ price.price / 100 }} EUR</p>
+                                {% endif %}
+                            {% endfor %}
                             <a href="{{ url_for('view_product', id=product.id) }}" class="btn btn-primary">View Product</a>
                         </div>
                     </div>

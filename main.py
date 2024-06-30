@@ -3,7 +3,7 @@ from secret import stripe_public_key, stripe_secret_key
 #  Import Other Libraries
 from flask import Flask, render_template, request, redirect, url_for, request, session
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash , check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 import stripe
 import os
 
@@ -24,6 +24,7 @@ class Product(db.Model):
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(500), nullable=False)
     stripe_product_id = db.Column(db.String(100), nullable=False)
+    is_purchasable = db.Column(db.Boolean, default=True)
     prices = db.relationship('ProductPrice', back_populates='product', lazy=True)
 
 
@@ -60,6 +61,16 @@ if not os.path.exists('instance/db.db'):
     with app.app_context():
         db.create_all()
         print("Datenbank erstellt.")
+
+
+def check_permissions(required_permissions):
+    if 'username' not in session:
+        return False
+    session_user = db.session.get(User, session['user_id'])
+    for permission in required_permissions:
+        if not getattr(session_user, permission):
+            return False
+    return True
 
 
 @app.route('/', methods=['GET'])
@@ -125,7 +136,7 @@ def product_second():
 
 @app.route('/products', methods=['GET'])
 def products():
-    products = Product.query.all()
+    products = Product.query.filter_by(is_purchasable=True).all()
     return render_template('products.html', products=products)
 
 
@@ -152,6 +163,26 @@ def add_product():
     return render_template('add_product.html')
 
 
+@app.route('/product/list', methods=['GET', 'POST'])
+def list_products():
+    products = Product.query.all()
+
+    if request.method == 'POST':
+        product_id = request.form.get('product_id')
+        product = Product.query.get(product_id)
+
+        if product:
+            product.name = request.form.get('name')
+            product.description = request.form.get('description')
+            product.is_purchasable = 'is_purchasable' in request.form
+
+            stripe.Product.modify(product.stripe_product_id, name=product.name, description=product.description)
+
+            db.session.commit()
+
+    return render_template('list_products.html', products=products)
+
+
 @app.route('/product/<int:id>')
 def view_product(id):
     product = Product.query.get_or_404(id)
@@ -169,6 +200,7 @@ def edit_product(id):
         if action == 'edit_product':
             product.name = request.form.get('name')
             product.description = request.form.get('description')
+            product.is_purchasable = 'is_purchasable' in request.form
 
             stripe.Product.modify(product.stripe_product_id, name=product.name, description=product.description)
 
