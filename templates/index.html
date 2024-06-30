@@ -2,26 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
-    <script src="https://js.stripe.com/v3/"></script>
+    <title>Home</title>
+    <link rel="stylesheet" href="/static/bootstrap-5.3.3-dist/css/bootstrap.min.css">
+    <script src="/static/bootstrap-5.3.3-dist/js/bootstrap.min.js"></script>
 </head>
 <body>
-    <button id="checkout-button">Checkout</button>
-
-    <script>
-        var stripe = Stripe('{{stripe_public_key}}');
-
-        var checkoutButton = document.getElementById('checkout-button');
-        checkoutButton.addEventListener('click', function () {
-            stripe.redirectToCheckout(
-                {
-                sessionId: '{{checkout_public_key}}',
-            }).then(function (result) {
-                if (result.error) {
-                    alert(result.error.message);
-                }
-            });
-        });
-    </script>
+    <h1>Welcome to our website!</h1>
+    <p>Check out our <a href="/products">products</a>.</p>
+    <script src="/static/bootstrap-5.3.3-dist/js/bootstrap.min.js"></script>
 </body>
 </html>

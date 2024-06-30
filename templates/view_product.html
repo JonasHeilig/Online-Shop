@@ -4,20 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ product.name }}</title>
+    <link rel="stylesheet" href="/static/bootstrap-5.3.3-dist/css/bootstrap.min.css">
+    <script src="/static/bootstrap-5.3.3-dist/js/bootstrap.min.js"></script>
 </head>
 <body>
-    <h1>{{ product.name }}</h1>
-    <p>{{ product.description }}</p>
-    {% if active_price %}
-        <p>Active Price: {{ active_price.price / 100 }} EUR</p>
-    {% endif %}
-    <h2>Prices</h2>
-    <ul>
-        {% for price in product.prices %}
-            <li>
-                {{ price.price / 100 }} EUR - {% if price.active %}Active{% else %}<form method="POST" style="display:inline;" action="{{ url_for('edit_product', id=product.id) }}"><input type="hidden" name="action" value="set_price"><input type="hidden" name="price_id" value="{{ price.id }}"><button type="submit">Set as Active</button></form>{% endif %}
-            </li>
-        {% endfor %}
-    </ul>
+    <div class="container">
+        <h1>{{ product.name }}</h1>
+        <p>{{ product.description }}</p>
+        {% if active_price %}
+            <p>Active Price: {{ active_price.price / 100 }} EUR</p>
+        {% endif %}
+
+        <h2>Prices</h2>
+        <ul>
+            {% for price in product.prices %}
+                <li>
+                    {{ price.price / 100 }} EUR -
+                    {% if price.active %}
+                        Active
+                    {% else %}
+                        <form method="POST" style="display:inline;" action="{{ url_for('edit_product', id=product.id) }}">
+                            <input type="hidden" name="action" value="set_price">
+                            <input type="hidden" name="price_id" value="{{ price.id }}">
+                            <button type="submit" class="btn btn-link">Set as Active</button>
+                        </form>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+
+        <form action="{{ url_for('add_to_cart') }}" method="POST" class="mt-3">
+            <input type="hidden" name="product_id" value="{{ product.id }}">
+            <div class="mb-3">
+                <label for="quantity" class="form-label">Menge:</label>
+                <input type="number" name="quantity" value="1" min="1" class="form-control" id="quantity">
+            </div>
+            <button type="submit" class="btn btn-primary">In den Warenkorb</button>
+        </form>
+
+        <a href="{{ url_for('products') }}" class="btn btn-secondary mt-3">Zurück zu den Produkten</a>
+    </div>
 </body>
 </html>

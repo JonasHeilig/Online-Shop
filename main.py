@@ -36,27 +36,41 @@ class ProductPrice(db.Model):
     product = db.relationship('Product', back_populates='prices')
 
 
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), unique=True)
+    password = db.Column(db.String(128))
+    isAdmin = db.Column(db.Boolean, default=False)
+    stripe_customer_id = db.Column(db.String(100), nullable=True)
+
+
 if not os.path.exists('instance/db.db'):
     with app.app_context():
         db.create_all()
         print("Datenbank erstellt.")
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET'])
 def index():
-    payment_session = stripe.checkout.Session.create(
-        payment_method_types=['card'],
-        line_items=[{
-            'price': 'price_1PXIJuEBNfzifYAVgKFjthuA',
-            'quantity': 1,
-        }],
-        mode='payment',
-        success_url=url_for('thanks',
-                            _external=True) + '?payment_session_id={CHECKOUT_SESSION_ID}?transaction_id={CHECKOUT_SESSION_ID}',
-        cancel_url=url_for('index', _external=True),
-    )
-    return render_template('index.html', stripe_public_key=app.config['STRIPE_PUBLIC_KEY'],
-                           checkout_public_key=payment_session['id'])
+    return render_template('index.html')
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = request.args.get('error', '')
+    if 'username' in session:
+        return redirect(url_for('index'))
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        session_user = User.query.filter_by(username=username).first()
+        if session_user and check_password_hash(session_user.password, password):
+            session['username'] = username
+            session['user_id'] = session_user.id
+            return redirect(url_for('index'))
+        else:
+            return render_template('login.html', app_name=app_name, error="Invalid username or password")
+    return render_template('login.html', app_name=app_name, error=error)
 
 
 @app.route('/thanks')
@@ -84,9 +98,10 @@ def product_second():
     return redirect('/products')
 
 
-@app.route('/products')
+@app.route('/products', methods=['GET'])
 def products():
-    pass
+    products = Product.query.all()
+    return render_template('products.html', products=products)
 
 
 @app.route('/product/add', methods=['GET', 'POST'])

@@ -15,7 +15,7 @@
         checkoutButton.addEventListener('click', function () {
             stripe.redirectToCheckout(
                 {
-                paymentIntent: '{{payment_intent.id}}',
+                sessionId: '{{checkout_public_key}}',
             }).then(function (result) {
                 if (result.error) {
                     alert(result.error.message);
