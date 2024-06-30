@@ -1,13 +1,23 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ product.name }}</title>
 </head>
 <body>
     <h1>{{ product.name }}</h1>
     <p>{{ product.description }}</p>
-    <p>Price: {{ product.price / 100 }} EUR</p>
-    <a href="{{ url_for('edit_product', id=product.id) }}">Edit Product</a>
+    {% if active_price %}
+        <p>Active Price: {{ active_price.price / 100 }} EUR</p>
+    {% endif %}
+    <h2>Prices</h2>
+    <ul>
+        {% for price in product.prices %}
+            <li>
+                {{ price.price / 100 }} EUR - {% if price.active %}Active{% else %}<form method="POST" style="display:inline;" action="{{ url_for('edit_product', id=product.id) }}"><input type="hidden" name="action" value="set_price"><input type="hidden" name="price_id" value="{{ price.id }}"><button type="submit">Set as Active</button></form>{% endif %}
+            </li>
+        {% endfor %}
+    </ul>
 </body>
 </html>

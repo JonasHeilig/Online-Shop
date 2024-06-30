@@ -22,9 +22,18 @@ class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(500), nullable=False)
-    price = db.Column(db.Integer, nullable=False)  # Price in cents
     stripe_product_id = db.Column(db.String(100), nullable=False)
+    prices = db.relationship('ProductPrice', back_populates='product', lazy=True)
+
+
+class ProductPrice(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
     stripe_price_id = db.Column(db.String(100), nullable=False)
+    price = db.Column(db.Integer, nullable=False)
+    active = db.Column(db.Boolean, default=False)
+
+    product = db.relationship('Product', back_populates='prices')
 
 
 if not os.path.exists('instance/db.db'):
@@ -65,6 +74,21 @@ def thanks():
     return render_template('thanks.html', transaction_id=transaction_id, payment_session_id=payment_session_id)
 
 
+@app.route('/product')
+def product():
+    return redirect('/products')
+
+
+@app.route('/product/')
+def product_second():
+    return redirect('/products')
+
+
+@app.route('/products')
+def products():
+    pass
+
+
 @app.route('/product/add', methods=['GET', 'POST'])
 def add_product():
     if request.method == 'POST':
@@ -75,9 +99,12 @@ def add_product():
         stripe_product = stripe.Product.create(name=name, description=description)
         stripe_price = stripe.Price.create(product=stripe_product.id, unit_amount=price, currency='eur')
 
-        product = Product(name=name, description=description, price=price,
-                          stripe_product_id=stripe_product.id, stripe_price_id=stripe_price.id)
+        product = Product(name=name, description=description, stripe_product_id=stripe_product.id)
         db.session.add(product)
+        db.session.commit()
+
+        product_price = ProductPrice(product_id=product.id, stripe_price_id=stripe_price.id, price=price, active=True)
+        db.session.add(product_price)
         db.session.commit()
 
         return redirect(url_for('view_product', id=product.id))
@@ -88,7 +115,46 @@ def add_product():
 @app.route('/product/<int:id>')
 def view_product(id):
     product = Product.query.get_or_404(id)
-    return render_template('view_product.html', product=product)
+    active_price = ProductPrice.query.filter_by(product_id=id, active=True).first()
+    return render_template('view_product.html', product=product, active_price=active_price)
+
+
+@app.route('/product/<int:id>/edit', methods=['GET', 'POST'])
+def edit_product(id):
+    product = Product.query.get_or_404(id)
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+
+        if action == 'edit_product':
+            product.name = request.form.get('name')
+            product.description = request.form.get('description')
+
+            stripe.Product.modify(product.stripe_product_id, name=product.name, description=product.description)
+
+            db.session.commit()
+
+            return redirect(url_for('view_product', id=product.id))
+
+        elif action == 'add_price':
+            price = int(request.form.get('price'))
+            stripe_price = stripe.Price.create(product=product.stripe_product_id, unit_amount=price, currency='eur')
+
+            product_price = ProductPrice(product_id=id, stripe_price_id=stripe_price.id, price=price)
+            db.session.add(product_price)
+            db.session.commit()
+
+            return redirect(url_for('edit_product', id=product.id))
+
+        elif action == 'set_price':
+            price_id = int(request.form.get('price_id'))
+            for price in product.prices:
+                price.active = (price.id == price_id)
+            db.session.commit()
+
+            return redirect(url_for('edit_product', id=product.id))
+
+    return render_template('edit_product.html', product=product)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Product</title>
+</head>
+<body>
+    <h1>Edit {{ product.name }}</h1>
+    <form method="POST">
+        <input type="hidden" name="action" value="edit_product">
+        <label for="name">Name:</label>
+        <input type="text" name="name" value="{{ product.name }}" required>
+        <label for="description">Description:</label>
+        <textarea name="description" required>{{ product.description }}</textarea>
+        <button type="submit">Save Changes</button>
+    </form>
+
+    <h2>Add Price</h2>
+    <form method="POST">
+        <input type="hidden" name="action" value="add_price">
+        <label for="price">Price (in cents):</label>
+        <input type="number" name="price" required>
+        <button type="submit">Add Price</button>
+    </form>
+
+    <h2>Prices</h2>
+    <ul>
+        {% for price in product.prices %}
+            <li>
+                {{ price.price / 100 }} cents - {% if price.active %}Active{% else %}<form method="POST" style="display:inline;"><input type="hidden" name="action" value="set_price"><input type="hidden" name="price_id" value="{{ price.id }}"><button type="submit">Set as Active</button></form>{% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+
+    <a href="{{ url_for('view_product', id=product.id) }}">Back to Product</a>
+</body>
+</html>
