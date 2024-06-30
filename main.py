@@ -46,6 +46,7 @@ class Purchase(db.Model):
     quantity = db.Column(db.Integer, nullable=False)
     transaction_id = db.Column(db.String(100), nullable=True)
     payment_session_id = db.Column(db.String(100), nullable=True)
+    total_price = db.Column(db.Float, nullable=True)  # new field
 
     user = db.relationship('User', back_populates='purchases')
     product = db.relationship('Product')
@@ -139,23 +140,17 @@ def thanks():
     transaction_id = None
     payment_session_id = request.args.get('payment_session_id')
     if payment_session_id:
-        try:
-            session = stripe.checkout.Session.retrieve(payment_session_id)
-            payment_intent_id = session.payment_intent
-            payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
-            transaction_id = payment_intent.id
-
-            purchase = Purchase.query.filter_by(user_id=session['user_id']).first()
-            if purchase:
-                purchase.transaction_id = transaction_id
-                purchase.payment_session_id = payment_session_id
-                db.session.commit()
-
-        except stripe.error.InvalidRequestError:
-            transaction_id = 'Invalid session ID'
+        stripe_session = stripe.checkout.Session.retrieve(payment_session_id)
+        if stripe_session.payment_status == 'paid':
+            user_id = stripe_session.client_reference_id
+            product_id = stripe_session.line_items.data[0].price.product
+            quantity = stripe_session.line_items.data[0].quantity
+            purchase = Purchase(user_id=user_id, product_id=product_id, quantity=quantity, payment_session_id=payment_session_id)
+            db.session.add(purchase)
+            db.session.commit()
+            transaction_id = stripe_session.payment_intent
 
     return render_template('thanks.html', transaction_id=transaction_id, payment_session_id=payment_session_id)
-
 
 @app.route('/product')
 def product():
@@ -228,13 +223,16 @@ def view_product(id):
 
 @app.route('/product/<int:id>/buy', methods=['POST'])
 def buy_product(id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user_id = session['user_id']
     product = Product.query.get_or_404(id)
     active_price = ProductPrice.query.filter_by(product_id=id, active=True).first()
 
     if not active_price:
         return "No active price for this product", 400
 
-    session = stripe.checkout.Session.create(
+    stripe_session = stripe.checkout.Session.create(
         payment_method_types=['card'],
         line_items=[{
             'price': active_price.stripe_price_id,
@@ -243,9 +241,10 @@ def buy_product(id):
         mode='payment',
         success_url=url_for('thanks', _external=True) + '?payment_session_id={CHECKOUT_SESSION_ID}',
         cancel_url=url_for('view_product', id=id, _external=True),
+        client_reference_id=user_id
     )
 
-    return jsonify({'id': session.id})
+    return jsonify({'id': stripe_session.id})
 
 
 @app.route('/product/<int:id>/edit', methods=['GET', 'POST'])

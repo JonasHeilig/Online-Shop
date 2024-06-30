@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transactions</title>
+    <link rel="stylesheet" href="/static/bootstrap-5.3.3-dist/css/bootstrap.min.css">
+    <script src="/static/bootstrap-5.3.3-dist/js/bootstrap.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <h1>Your Transactions</h1>
+                {% for purchase in purchases %}
+                    <div class="card mt-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Transaction ID: {{ purchase.transaction_id }}</h5>
+                            <p class="card-text">Product ID: {{ purchase.product_id }}</p>
+                            <p class="card-text">Quantity: {{ purchase.quantity }}</p>
+                            <p class="card-text">Total Amount: {{ purchase.total_price }} EUR</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>
