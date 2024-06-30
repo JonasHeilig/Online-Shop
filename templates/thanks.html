@@ -22,7 +22,7 @@
                         <p class="card-text text-center">Your transaction was successful. We appreciate your business.</p> <br><br>
                         {% if session_id %}
                         <footer class="text-center mt-5">
-                            <p class="transaction-id">Session ID: <br> {{ session_id }}</p>
+                            <p class="transaction-id">Session ID: <br> {{ payment_session_id }}</p>
                             <p class="transaction-id">Transaction ID: <br> {{ transaction_id }}</p>
                         </footer>
                         {% endif %}
