@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -8,33 +8,47 @@
     <script src="/static/bootstrap-5.3.3-dist/js/bootstrap.min.js"></script>
 </head>
 <body>
-    <h1>Edit {{ product.name }}</h1>
-    <form method="POST">
-        <input type="hidden" name="action" value="edit_product">
-        <label for="name">Name:</label>
-        <input type="text" name="name" value="{{ product.name }}" required>
-        <label for="description">Description:</label>
-        <textarea name="description" required>{{ product.description }}</textarea>
-        <button type="submit">Save Changes</button>
-    </form>
-
-    <h2>Add Price</h2>
-    <form method="POST">
-        <input type="hidden" name="action" value="add_price">
-        <label for="price">Price (in cents):</label>
-        <input type="number" name="price" required>
-        <button type="submit">Add Price</button>
-    </form>
-
-    <h2>Prices</h2>
-    <ul>
-        {% for price in product.prices %}
-            <li>
-                {{ price.price / 100 }} cents - {% if price.active %}Active{% else %}<form method="POST" style="display:inline;"><input type="hidden" name="action" value="set_price"><input type="hidden" name="price_id" value="{{ price.id }}"><button type="submit">Set as Active</button></form>{% endif %}
-            </li>
-        {% endfor %}
-    </ul>
-
-    <a href="{{ url_for('view_product', id=product.id) }}">Back to Product</a>
+    <div class="container mt-5">
+        <h1>Edit {{ product.name }}</h1>
+        <form method="POST">
+            <input type="hidden" name="action" value="edit_product">
+            <div class="mb-3">
+                <label for="name" class="form-label">Name:</label>
+                <input type="text" name="name" value="{{ product.name }}" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="description" class="form-label">Description:</label>
+                <textarea name="description" class="form-control" required>{{ product.description }}</textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </form>
+        <h2 class="mt-4">Add Price</h2>
+        <form method="POST">
+            <input type="hidden" name="action" value="add_price">
+            <div class="mb-3">
+                <label for="price" class="form-label">Price (in cents):</label>
+                <input type="number" name="price" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-success">Add Price</button>
+        </form>
+        <h2 class="mt-4">Prices</h2>
+        <ul class="list-unstyled">
+            {% for price in product.prices %}
+                <li class="mb-2">
+                    {{ price.price / 100 }} EUR -
+                    {% if price.active %}
+                        Active
+                    {% else %}
+                        <form method="POST" class="d-inline">
+                            <input type="hidden" name="action" value="set_price">
+                            <input type="hidden" name="price_id" value="{{ price.id }}">
+                            <button type="submit" class="btn btn-link">Set as Active</button>
+                        </form>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+        <a href="{{ url_for('view_product', id=product.id) }}" class="btn btn-secondary mt-3">Back to Product</a>
+    </div>
 </body>
 </html>

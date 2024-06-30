@@ -1,8 +1,9 @@
 #  Import Secrets
 from secret import stripe_public_key, stripe_secret_key
 #  Import Other Libraries
-from flask import Flask, render_template, request, redirect, url_for, request
+from flask import Flask, render_template, request, redirect, url_for, request, session
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash , check_password_hash
 import stripe
 import os
 
@@ -36,12 +37,23 @@ class ProductPrice(db.Model):
     product = db.relationship('Product', back_populates='prices')
 
 
+class Purchase(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+
+    user = db.relationship('User', back_populates='purchases')
+    product = db.relationship('Product')
+
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True)
     password = db.Column(db.String(128))
     isAdmin = db.Column(db.Boolean, default=False)
     stripe_customer_id = db.Column(db.String(100), nullable=True)
+    purchases = db.relationship('Purchase', back_populates='user', lazy=True)
 
 
 if not os.path.exists('instance/db.db'):
@@ -53,6 +65,19 @@ if not os.path.exists('instance/db.db'):
 @app.route('/', methods=['GET'])
 def index():
     return render_template('index.html')
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        hashed_password = generate_password_hash(password)
+        new_user = User(username=username, password=hashed_password)
+        db.session.add(new_user)
+        db.session.commit()
+        return redirect(url_for('login'))
+    return render_template('register.html')
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -69,8 +94,8 @@ def login():
             session['user_id'] = session_user.id
             return redirect(url_for('index'))
         else:
-            return render_template('login.html', app_name=app_name, error="Invalid username or password")
-    return render_template('login.html', app_name=app_name, error=error)
+            return render_template('login.html', error="Invalid username or password")
+    return render_template('login.html', error=error)
 
 
 @app.route('/thanks')

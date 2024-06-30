@@ -13,17 +13,17 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container mt-5">
         <div class="row justify-content-center">
             <div class="col-md-6">
-                <div class="card mt-5">
-                    <div class="card-body">
-                        <h2 class="card-title text-center">Thank You For Your Purchase!</h2>
-                        <p class="card-text text-center">Your transaction was successful. We appreciate your business.</p> <br><br>
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h2 class="card-title">Thank You For Your Purchase!</h2>
+                        <p class="card-text">Your transaction was successful. We appreciate your business.</p>
                         {% if session_id %}
-                        <footer class="text-center mt-5">
-                            <p class="transaction-id">Session ID: <br> {{ payment_session_id }}</p>
-                            <p class="transaction-id">Transaction ID: <br> {{ transaction_id }}</p>
+                        <footer class="mt-4">
+                            <p class="transaction-id">Session ID:<br>{{ payment_session_id }}</p>
+                            <p class="transaction-id">Transaction ID:<br>{{ transaction_id }}</p>
                         </footer>
                         {% endif %}
                     </div>
