@@ -3,8 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+    <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
+    <button id="checkout-button">Checkout</button>
 
+<script>
+    var stripe = Stripe('{{ stripe_public_key }}');
+
+    var checkoutButton = document.getElementById('checkout-button');
+    checkoutButton.addEventListener('click', function () {
+        console.log('Checkout button clicked');
+        try {
+            stripe.redirectToCheckout({
+                paymentIntent: '{{ payment_intent_id }}',
+            }).then(function (result) {
+                if (result.error) {
+                    alert(result.error.message);
+                }
+            });
+        } catch (error) {
+            console.error('Error redirecting to checkout:', error);
+        }
+    });
+</script>
 </body>
 </html>

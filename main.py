@@ -17,9 +17,15 @@ db = SQLAlchemy(app)
 stripe.api_key = app.config['STRIPE_SECRET_KEY']
 
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    return render_template('index.html')
+    payment_intent = stripe.PaymentIntent.create(
+        amount=399,
+        currency='usd',
+        payment_method_types=['card'],
+    )
+
+    return render_template('index.html', stripe_public_key=app.config['STRIPE_PUBLIC_KEY'], payment_intent_id=payment_intent.id)
 
 
 @app.route('/thanks/<transaction_id>')
