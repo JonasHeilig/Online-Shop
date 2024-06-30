@@ -19,16 +19,13 @@
                 <div class="card mt-5">
                     <div class="card-body">
                         <h2 class="card-title text-center">Thank You For Your Purchase!</h2>
-                        <p class="card-text text-center">Your transaction was successful. We appreciate your business.</p>
-                        {% if additional_info %}
-                        <div class="additional-info text-center mt-3">
-                            <h5>More Information:</h5>
-                            <p>{{ additional_info }}</p>
-                        </div>
-                        {% endif %}
+                        <p class="card-text text-center">Your transaction was successful. We appreciate your business.</p> <br><br>
+                        {% if session_id %}
                         <footer class="text-center mt-5">
-                            <p class="transaction-id">Transaction ID: {{ transaction_id }}</p>
+                            <p class="transaction-id">Session ID: <br> {{ session_id }}</p>
+                            <p class="transaction-id">Transaction ID: <br> {{ transaction_id }}</p>
                         </footer>
+                        {% endif %}
                     </div>
                 </div>
             </div>

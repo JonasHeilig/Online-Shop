@@ -19,19 +19,33 @@ stripe.api_key = app.config['STRIPE_SECRET_KEY']
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    payment_intent = stripe.PaymentIntent.create(
-        amount=399,
-        currency='usd',
+    session = stripe.checkout.Session.create(
         payment_method_types=['card'],
+        line_items=[{
+            'price': 'price_1PXIJuEBNfzifYAVgKFjthuA',
+            'quantity': 1,
+        }],
+        mode='payment',
+        success_url=url_for('thanks', _external=True) + '?session_id={CHECKOUT_SESSION_ID}?transaction_id={CHECKOUT_SESSION_ID}',
+        cancel_url=url_for('index', _external=True),
     )
+    return render_template('index.html', stripe_public_key=app.config['STRIPE_PUBLIC_KEY'],
+                           checkout_public_key=session['id'])
 
-    return render_template('index.html', stripe_public_key=app.config['STRIPE_PUBLIC_KEY'], payment_intent_id=payment_intent.id)
 
+@app.route('/thanks')
+def thanks():
+    session_id = request.args.get('session_id')
+    if session_id:
+        try:
+            session = stripe.checkout.Session.retrieve(session_id)
+            payment_intent_id = session.payment_intent
+            payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+            transaction_id = payment_intent.id
+        except stripe.error.InvalidRequestError:
+            transaction_id = 'Invalid session ID'
 
-@app.route('/thanks/<transaction_id>')
-def thanks(transaction_id):
-    additional_info = None
-    return render_template('thanks.html', transaction_id=transaction_id, additional_info=additional_info)
+    return render_template('thanks.html', transaction_id=transaction_id, session_id=session_id)
 
 
 if __name__ == '__main__':

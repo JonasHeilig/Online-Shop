@@ -8,24 +8,20 @@
 <body>
     <button id="checkout-button">Checkout</button>
 
-<script>
-    var stripe = Stripe('{{ stripe_public_key }}');
+    <script>
+        var stripe = Stripe('{{stripe_public_key}}');
 
-    var checkoutButton = document.getElementById('checkout-button');
-    checkoutButton.addEventListener('click', function () {
-        console.log('Checkout button clicked');
-        try {
-            stripe.redirectToCheckout({
-                paymentIntent: '{{ payment_intent_id }}',
+        var checkoutButton = document.getElementById('checkout-button');
+        checkoutButton.addEventListener('click', function () {
+            stripe.redirectToCheckout(
+                {
+                sessionId: '{{checkout_public_key}}',
             }).then(function (result) {
                 if (result.error) {
                     alert(result.error.message);
                 }
             });
-        } catch (error) {
-            console.error('Error redirecting to checkout:', error);
-        }
-    });
-</script>
+        });
+    </script>
 </body>
 </html>
