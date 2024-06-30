@@ -1,9 +1,10 @@
 #  Import Secrets
 from secret import stripe_public_key, stripe_secret_key
 #  Import Other Libraries
-from flask import Flask, render_template, request, redirect, url_for, request, session
+from flask import Flask, render_template, request, redirect, url_for, request, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 import stripe
 import os
 
@@ -43,6 +44,8 @@ class Purchase(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
+    transaction_id = db.Column(db.String(100), nullable=True)
+    payment_session_id = db.Column(db.String(100), nullable=True)
 
     user = db.relationship('User', back_populates='purchases')
     product = db.relationship('Product')
@@ -71,6 +74,19 @@ def check_permissions(required_permissions):
         if not getattr(session_user, permission):
             return False
     return True
+
+
+def requires_permission(permission):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not check_permissions([permission]):
+                return redirect(url_for('login'))
+            return f(*args, **kwargs)
+
+        return decorated_function
+
+    return decorator
 
 
 @app.route('/', methods=['GET'])
@@ -109,8 +125,18 @@ def login():
     return render_template('login.html', error=error)
 
 
+@app.route('/transactions', methods=['GET'])
+def transactions():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    user_id = session['user_id']
+    purchases = Purchase.query.filter_by(user_id=user_id).all()
+    return render_template('transactions.html', purchases=purchases)
+
+
 @app.route('/thanks')
 def thanks():
+    transaction_id = None
     payment_session_id = request.args.get('payment_session_id')
     if payment_session_id:
         try:
@@ -118,6 +144,13 @@ def thanks():
             payment_intent_id = session.payment_intent
             payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
             transaction_id = payment_intent.id
+
+            purchase = Purchase.query.filter_by(user_id=session['user_id']).first()
+            if purchase:
+                purchase.transaction_id = transaction_id
+                purchase.payment_session_id = payment_session_id
+                db.session.commit()
+
         except stripe.error.InvalidRequestError:
             transaction_id = 'Invalid session ID'
 
@@ -141,6 +174,7 @@ def products():
 
 
 @app.route('/product/add', methods=['GET', 'POST'])
+@requires_permission('isAdmin')
 def add_product():
     if request.method == 'POST':
         name = request.form.get('name')
@@ -164,6 +198,7 @@ def add_product():
 
 
 @app.route('/product/list', methods=['GET', 'POST'])
+@requires_permission('isAdmin')
 def list_products():
     products = Product.query.all()
 
@@ -187,10 +222,34 @@ def list_products():
 def view_product(id):
     product = Product.query.get_or_404(id)
     active_price = ProductPrice.query.filter_by(product_id=id, active=True).first()
-    return render_template('view_product.html', product=product, active_price=active_price)
+    return render_template('view_product.html', product=product, active_price=active_price,
+                           stripe_public_key=app.config['STRIPE_PUBLIC_KEY'])
+
+
+@app.route('/product/<int:id>/buy', methods=['POST'])
+def buy_product(id):
+    product = Product.query.get_or_404(id)
+    active_price = ProductPrice.query.filter_by(product_id=id, active=True).first()
+
+    if not active_price:
+        return "No active price for this product", 400
+
+    session = stripe.checkout.Session.create(
+        payment_method_types=['card'],
+        line_items=[{
+            'price': active_price.stripe_price_id,
+            'quantity': 1,
+        }],
+        mode='payment',
+        success_url=url_for('thanks', _external=True) + '?payment_session_id={CHECKOUT_SESSION_ID}',
+        cancel_url=url_for('view_product', id=id, _external=True),
+    )
+
+    return jsonify({'id': session.id})
 
 
 @app.route('/product/<int:id>/edit', methods=['GET', 'POST'])
+@requires_permission('isAdmin')
 def edit_product(id):
     product = Product.query.get_or_404(id)
 
@@ -227,6 +286,12 @@ def edit_product(id):
             return redirect(url_for('edit_product', id=product.id))
 
     return render_template('edit_product.html', product=product)
+
+
+@app.route('/logout')
+def logout():
+    session.pop('username', None)
+    return redirect(url_for('index'))
 
 
 if __name__ == '__main__':
