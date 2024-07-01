@@ -61,6 +61,18 @@ class User(db.Model):
     purchases = db.relationship('Purchase', back_populates='user', lazy=True)
 
 
+class Cart(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+
+    user = db.relationship('User', back_populates='carts')
+    product = db.relationship('Product')
+
+
+User.carts = db.relationship('Cart', back_populates='user', lazy=True)
+
 if not os.path.exists('instance/db.db'):
     with app.app_context():
         db.create_all()
@@ -145,12 +157,14 @@ def thanks():
             user_id = stripe_session.client_reference_id
             product_id = stripe_session.line_items.data[0].price.product
             quantity = stripe_session.line_items.data[0].quantity
-            purchase = Purchase(user_id=user_id, product_id=product_id, quantity=quantity, payment_session_id=payment_session_id)
+            purchase = Purchase(user_id=user_id, product_id=product_id, quantity=quantity,
+                                payment_session_id=payment_session_id)
             db.session.add(purchase)
             db.session.commit()
             transaction_id = stripe_session.payment_intent
 
     return render_template('thanks.html', transaction_id=transaction_id, payment_session_id=payment_session_id)
+
 
 @app.route('/product')
 def product():
@@ -285,6 +299,41 @@ def edit_product(id):
             return redirect(url_for('edit_product', id=product.id))
 
     return render_template('edit_product.html', product=product)
+
+
+@app.route('/cart/add', methods=['POST'])
+def add_to_cart():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user_id = session['user_id']
+    product_id = request.form.get('product_id')
+    quantity = request.form.get('quantity')
+    cart = Cart(user_id=user_id, product_id=product_id, quantity=quantity)
+    db.session.add(cart)
+    db.session.commit()
+    return redirect(url_for('cart'))
+
+
+@app.route('/cart', methods=['GET'])
+def cart():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user_id = session['user_id']
+    carts = Cart.query.filter_by(user_id=user_id).all()
+    return render_template('cart.html', carts=carts)
+
+
+@app.route('/cart/remove', methods=['POST'])
+def remove_from_cart():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user_id = session['user_id']
+    product_id = request.form.get('product_id')
+    cart_item = Cart.query.filter_by(user_id=user_id, product_id=product_id).first()
+    if cart_item:
+        db.session.delete(cart_item)
+        db.session.commit()
+    return redirect(url_for('cart'))
 
 
 @app.route('/logout')

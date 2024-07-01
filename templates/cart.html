@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cart</title>
+</head>
+<body>
+    <h1>Your Cart</h1>
+    <table>
+        <tr>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th></th>
+        </tr>
+        {% for cart_item in carts %}
+        <tr>
+            <td>{{ cart_item.product.name }}</td>
+            <td>{{ cart_item.quantity }}</td>
+            <td>
+                <form method="POST" action="{{ url_for('remove_from_cart') }}">
+                    <input type="hidden" name="product_id" value="{{ cart_item.product.id }}">
+                    <input type="submit" value="Remove">
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
